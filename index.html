@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Répondeur - Edge TTS Vivienne</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .voice-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .char-counter.warning {
+            color: #ff6b6b;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .volume-value {
+            min-width: 45px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-primary.loading {
+            color: transparent;
+        }
+
+        .spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .btn-primary.loading .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border: 2px solid #4CAF50;
+            text-align: center;
+        }
+
+        .result-card h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        audio {
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .btn-success {
+            padding: 12px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #fcc;
+            margin-bottom: 20px;
+        }
+
+        .info-message {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #90caf9;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .status-check {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+        }
+
+        .status-icon {
+            width: 20px;
+            margin-right: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎙️ Générateur de Répondeur</h1>
+            <p class="subtitle">Message professionnel avec Edge TTS</p>
+            <span class="voice-badge">🔊 Voix: Vivienne (Multilingue)</span>
+        </header>
+
+        <main>
+            <div class="card">
+                <form id="voiceForm">
+                    <div class="form-group">
+                        <label for="textInput">Message du répondeur :</label>
+                        <textarea 
+                            id="textInput" 
+                            name="text" 
+                            rows="6" 
+                            placeholder="Bonjour, vous êtes bien sur le répondeur de [Votre nom]. Je ne suis pas disponible pour le moment. Merci de laisser un message après le bip sonore et je vous rappellerai dès que possible."
+                            maxlength="500"
+                            required
+                        ></textarea>
+                        <div class="char-counter">
+                            <span id="charCount">0</span>/500 caractères
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="musicSelect">Musique de fond :</label>
+                        <select id="musicSelect" name="music">
+                            <option value="none">Sans musique</option>
+                            <option value="soft-piano" selected>Piano doux</option>
+                            <option value="corporate">Corporate</option>
+                            <option value="ambient">Ambiance</option>
+                            <option value="classical">Classique</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="volumeSlider">Volume de la musique :</label>
+                        <div class="volume-control">
+                            <input 
+                                type="range" 
+                                id="volumeSlider" 
+                                name="volume" 
+                                min="0" 
+                                max="50" 
+                                value="20"
+                            >
+                            <span class="volume-value" id="volumeValue">20%</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="generateBtn">
+                        <span class="btn-text">Générer le message</span>
+                        <span class="spinner"></span>
+                    </button>
+                </form>
+
+                <div class="info-message">
+                    <strong>ℹ️ Note :</strong> Ce générateur utilise Edge TTS avec la voix Vivienne pour une qualité optimale. 
+                    Assurez-vous qu'Edge TTS est installé sur votre serveur.
+                </div>
+            </div>
+
+            <div id="result" class="card result-card hidden">
+                <h2>✅ Message généré avec succès !</h2>
+                <audio id="audioPlayer" controls></audio>
+                <div>
+                    <button id="downloadBtn" class="btn-success">
+                        📥 Télécharger le fichier MP3
+                    </button>
+                </div>
+            </div>
+
+            <div id="error" class="error-message hidden"></div>
+
+            <div class="card status-check hidden" id="statusCard">
+                <h3>État du système</h3>
+                <div id="statusList"></div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>Powered by Edge TTS - Voix Vivienne</p>
+        </footer>
+    </div>
+
+    <script>
+        // Gestion du formulaire
+        const form = document.getElementById('voiceForm');
+        const textInput = document.getElementById('textInput');
+        const charCount = document.getElementById('charCount');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+        const generateBtn = document.getElementById('generateBtn');
+        const resultSection = document.getElementById('result');
+        const errorSection = document.getElementById('error');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Compteur de caractères
+        textInput.addEventListener('input', function() {
+            const length = this.value.length;
+            charCount.textContent = length;
+            
+            const counter = charCount.parentElement;
+            if (length > 450) {
+                counter.classList.add('warning');
+            } else {
+                counter.classList.remove('warning');
+            }
+        });
+
+        // Slider de volume
+        volumeSlider.addEventListener('input', function() {
+            volumeValue.textContent = this.value + '%';
+        });
+
+        // Soumission du formulaire
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Masquer les messages précédents
+            resultSection.classList.add('hidden');
+            errorSection.classList.add('hidden');
+            
+            // Afficher le spinner
+            generateBtn.classList.add('loading');
+            generateBtn.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('text', textInput.value);
+            formData.append('music', document.getElementById('musicSelect').value);
+            formData.append('volume', volumeSlider.value);
+            
+            try {
+                const response = await fetch('api/generate.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    audioPlayer.src = data.audioUrl;
+                    resultSection.classList.remove('hidden');
+                    
+                    // Configuration du téléchargement
+                    downloadBtn.onclick = function() {
+                        const a = document.createElement('a');
+                        a.href = data.audioUrl;
+                        a.download = data.filename || 'repondeur.mp3';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                    
+                    // Scroll vers le résultat
+                    resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    throw new Error(data.error || 'Erreur lors de la génération');
+                }
+            } catch (error) {
+                errorSection.textContent = error.message;
+                errorSection.classList.remove('hidden');
+                
+                // Afficher l'aide d'installation si Edge TTS n'est pas installé
+                if (error.message.includes('Edge TTS')) {
+                    errorSection.innerHTML += '<br><br><a href="install.php" style="color: white;">→ Installer Edge TTS</a>';
+                }
+            } finally {
+                generateBtn.classList.remove('loading');
+                generateBtn.disabled = false;
+            }
+        });
+
+        // Vérifier le statut au chargement (optionnel)
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('api/status.php');
+                const status = await response.json();
+                
+                if (!status.edge_tts_installed) {
+                    const statusCard = document.getElementById('statusCard');
+                    const statusList = document.getElementById('statusList');
+                    
+                    statusCard.classList.remove('hidden');
+                    statusList.innerHTML = `
+                        <div class="status-item">
+                            <span class="status-icon">⚠️</span>
+                            <span>Edge TTS n'est pas installé. <a href="install.php">Installer maintenant</a></span>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                // Ignorer les erreurs de statut
+            }
+        });
+    </script>
+</body>
+</html>
